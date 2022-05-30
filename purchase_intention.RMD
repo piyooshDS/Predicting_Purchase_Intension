@@ -1,0 +1,148 @@
+---
+title: "purchase_intention"
+output: github_document
+date: '2022-05-30'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+## Importing Libraries
+```{r, warning=FALSE}
+library("data.table")
+library("caret")
+library(lattice)
+library("GGally")
+library(ggplot2)
+library(corrplot)
+library(rattle)
+library("gbm")
+
+```
+
+
+## Importing data file
+```{r}
+data = fread("online_shoppers_intention.csv")
+```
+
+
+##check dataset description and summary 
+```{r}
+str(data)
+head(data)
+summary(data)
+```
+## check for missing values
+```{r}
+is.na((data))
+```
+##changing column type of logical into int then as factor
+```{r}
+data$Revenue <- ifelse(data$Revenue ==TRUE,1,0)
+data$Revenue = as.factor(data$Revenue)
+data$Weekend <- ifelse(data$Weekend ==TRUE,1,0)
+data$Weekend = as.factor(data$Weekend)
+```
+
+
+##Performed encoding of variables by changing categorical variables into factors
+```{r}
+data$Browser = as.factor(data$Browser)
+data$OperatingSystems  = as.factor(data$OperatingSystems)
+data$Region  = as.factor(data$Region)
+data$TrafficType = as.factor(data$TrafficType)
+data$VisitorType = as.factor(data$VisitorType)
+```
+
+
+# Exploratory Data Analysis
+
+##plotting the correlation graph to check correlation between different features
+```{r}
+correlation <- cor(data[,c(1:10)]) 
+corrplot(correlation, method = "shade", type = "lower",diag = FALSE)
+```
+
+
+
+
+
+## plotting relation between Bounce rate and exit rate 
+```{r}
+ggplot(data = data,aes(x = BounceRates, y = ExitRates))+ 
+  geom_point(mapping = aes(color = Revenue)) + 
+  geom_smooth(se = TRUE, alpha = 0.5,color="blue",method="lm")+theme()
+```
+
+
+
+## bar graphs for Revenue 
+```{r}
+ggplot(data, aes(x = Revenue,fill=Revenue))+geom_bar()
+```
+
+
+## bar graphs Revenue vs Visitor Type
+```{r}
+ggplot(data, aes(x =VisitorType,fill=Revenue))+geom_bar()
+```
+
+## bar graphs for TrafficType
+```{r}
+ggplot(data, aes(x = TrafficType,fill=Revenue))+geom_bar()
+```
+
+## bar graphs for Region
+```{r}
+ggplot(data, aes(x = Region,fill=Revenue))+geom_bar(fill=rainbow(9))
+```
+
+
+## bar graphs for Special Day
+```{r}
+ggplot(data, aes(x = SpecialDay,fill=Revenue))+geom_bar(fill=rainbow(6))
+```
+
+
+## violin plot
+```{r}
+ggplot(data, aes(x = ProductRelated,y=Revenue))+geom_violin(trim = FALSE)
+```
+
+# Model Implementation
+
+# set seed 
+```{r}
+set.seed(12345678)
+```
+
+
+
+##splitting the data into training and testing set
+```{r}
+training = createDataPartition(y = data$Revenue, p = 0.75, list = FALSE)
+train_set = data[training, ]
+test_set = data[-training, ]
+```
